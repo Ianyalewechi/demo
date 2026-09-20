@@ -1,0 +1,415 @@
+
+name: 10Alytics CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+# Required for GitHub OIDC authentication with Azure
+permissions:
+  id-token: write
+  contents: read
+
+
+# ============================================================
+# GLOBAL VARIABLES
+# ============================================================
+
+env:
+  AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+  AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+  ACR_NAME: ${{ vars.ACR_NAME }}
+  VM_NAME: ${{ vars.VM_NAME }}
+  KEY_VAULT_NAME: ${{ vars.KEY_VAULT_NAME }}
+
+  IMAGE_NAME: 10alytics-app
+  IMAGE_TAG: ${{ github.sha }}
+
+
+jobs:
+
+  # ============================================================
+  # 1. TEST APPLICATION
+  # ============================================================
+
+  test:
+    name: Test Flask Application
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run pytest
+        working-directory: app
+        run: |
+          pytest -v
+
+
+  # ============================================================
+  # 2. PROVISION AZURE INFRASTRUCTURE
+  # ============================================================
+
+  infrastructure:
+    name: Provision Azure Infrastructure
+    runs-on: ubuntu-latest
+
+    # Infrastructure is only provisioned after tests pass
+    needs: test
+
+    steps:
+
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # --------------------------------------------------------
+      # Azure OIDC Authentication
+      # --------------------------------------------------------
+
+      - name: Login to Azure using OIDC
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # --------------------------------------------------------
+      # Terraform Setup
+      # --------------------------------------------------------
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # --------------------------------------------------------
+      # Terraform Init
+      # --------------------------------------------------------
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: |
+          terraform init
+
+      # --------------------------------------------------------
+      # Terraform Format Check
+      # --------------------------------------------------------
+
+      - name: Terraform Format Check
+        working-directory: terraform
+        run: |
+          terraform fmt -check
+
+      # --------------------------------------------------------
+      # Terraform Validate
+      # --------------------------------------------------------
+
+      - name: Terraform Validate
+        working-directory: terraform
+        run: |
+          terraform validate
+
+      # --------------------------------------------------------
+      # Terraform Plan
+      # --------------------------------------------------------
+
+      - name: Terraform Plan
+        working-directory: terraform
+        run: |
+          terraform plan \
+            -out=tfplan \
+            -var="subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+            -var="tenant_id=${{ secrets.AZURE_TENANT_ID }}" \
+            -var="resource_group_name=${{ env.AZURE_RESOURCE_GROUP }}" \
+            -var="location=${{ env.AZURE_LOCATION }}" \
+            -var="acr_name=${{ env.ACR_NAME }}" \
+            -var="vm_name=${{ env.VM_NAME }}" \
+            -var="key_vault_name=${{ env.KEY_VAULT_NAME }}"
+
+      # --------------------------------------------------------
+      # Terraform Apply
+      # --------------------------------------------------------
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: |
+          terraform apply \
+            -auto-approve \
+            tfplan
+
+
+  # ============================================================
+  # 3. BUILD AND PUSH DOCKER IMAGE
+  # ============================================================
+
+  build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+
+    # Docker build only starts after infrastructure succeeds
+    needs: infrastructure
+
+    steps:
+
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # --------------------------------------------------------
+      # Azure OIDC Authentication
+      # --------------------------------------------------------
+
+      - name: Login to Azure using OIDC
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # --------------------------------------------------------
+      # Login to Azure Container Registry
+      # --------------------------------------------------------
+
+      - name: Login to Azure Container Registry
+        run: |
+          az acr login --name "${{ env.ACR_NAME }}"
+
+      # --------------------------------------------------------
+      # Build Docker Image
+      # --------------------------------------------------------
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t "${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}" \
+            -t "${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest" \
+            .
+
+      # --------------------------------------------------------
+      # Push Docker Image
+      # --------------------------------------------------------
+
+      - name: Push Docker image
+        run: |
+          docker push "${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          docker push "${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest"
+
+
+  # ============================================================
+  # 4. DEPLOY APPLICATION TO AZURE VM
+  # ============================================================
+
+  deploy:
+    name: Deploy Application to Azure VM
+    runs-on: ubuntu-latest
+
+    # Deployment only starts after Docker image is pushed
+    needs: build
+
+    steps:
+
+      # --------------------------------------------------------
+      # Azure OIDC Authentication
+      # --------------------------------------------------------
+
+      - name: Login to Azure using OIDC
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # --------------------------------------------------------
+      # Get VM Public IP
+      # --------------------------------------------------------
+
+      - name: Get VM public IP
+        run: |
+          VM_IP=$(az vm list-ip-addresses \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ env.VM_NAME }}" \
+            --query "[0].virtualMachine.network.publicIpAddresses[0].ipAddress" \
+            --output tsv)
+
+          if [ -z "$VM_IP" ]; then
+            echo "ERROR: Could not retrieve VM public IP."
+            exit 1
+          fi
+
+          echo "VM_IP=$VM_IP" >> "$GITHUB_ENV"
+
+      # --------------------------------------------------------
+      # Retrieve SSH Private Key from Azure Key Vault
+      # --------------------------------------------------------
+
+      - name: Retrieve deployment SSH key from Key Vault
+        run: |
+          VM_SSH_PRIVATE_KEY=$(az keyvault secret show \
+            --vault-name "${{ env.KEY_VAULT_NAME }}" \
+            --name "vm-ssh-private-key" \
+            --query value \
+            --output tsv)
+
+          if [ -z "$VM_SSH_PRIVATE_KEY" ]; then
+            echo "ERROR: SSH private key was not found in Key Vault."
+            exit 1
+          fi
+
+          echo "::add-mask::$VM_SSH_PRIVATE_KEY"
+
+          {
+            echo 'VM_SSH_PRIVATE_KEY<<EOF'
+            echo "$VM_SSH_PRIVATE_KEY"
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+
+      # --------------------------------------------------------
+      # Configure SSH
+      # --------------------------------------------------------
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+
+          printf '%s\n' "${VM_SSH_PRIVATE_KEY}" > ~/.ssh/10alytics_vm
+
+          chmod 600 ~/.ssh/10alytics_vm
+
+          ssh-keyscan -H "${VM_IP}" >> ~/.ssh/known_hosts
+
+      # --------------------------------------------------------
+      # Deploy Docker Container
+      # --------------------------------------------------------
+
+      - name: Deploy Docker container
+        run: |
+          ssh \
+            -i ~/.ssh/10alytics_vm \
+            admin@"${VM_IP}" \
+            "
+              set -e
+
+              echo 'Logging into Azure using VM Managed Identity'
+
+              az login --identity --allow-no-subscriptions
+
+              echo 'Logging into Azure Container Registry'
+
+              az acr login --name ${ACR_NAME}
+
+              echo 'Pulling new Docker image'
+
+              docker pull ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}
+
+              echo 'Stopping previous application container'
+
+              docker rm -f 10alytics-app 2>/dev/null || true
+
+              echo 'Starting new application container'
+
+              docker run -d \
+                --name 10alytics-app \
+                --restart unless-stopped \
+                -p 80:5000 \
+                ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}
+
+              echo 'Application deployment completed successfully'
+            "
+
+
+  # ============================================================
+  # 5. APPLICATION HEALTH CHECK
+  # ============================================================
+
+  health-check:
+    name: Application Health Check
+    runs-on: ubuntu-latest
+
+    # Health check only starts after deployment succeeds
+    needs: deploy
+
+    steps:
+
+      # --------------------------------------------------------
+      # Azure OIDC Authentication
+      # --------------------------------------------------------
+
+      - name: Login to Azure using OIDC
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # --------------------------------------------------------
+      # Get VM Public IP
+      # --------------------------------------------------------
+
+      - name: Get VM public IP
+        run: |
+          VM_IP=$(az vm list-ip-addresses \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ env.VM_NAME }}" \
+            --query "[0].virtualMachine.network.publicIpAddresses[0].ipAddress" \
+            --output tsv)
+
+          if [ -z "$VM_IP" ]; then
+            echo "ERROR: Could not retrieve VM public IP."
+            exit 1
+          fi
+
+          echo "VM_IP=$VM_IP" >> "$GITHUB_ENV"
+
+      # --------------------------------------------------------
+      # Wait for Application
+      # --------------------------------------------------------
+
+      - name: Wait for application
+        run: |
+          sleep 15
+
+      # --------------------------------------------------------
+      # Health Check
+      # --------------------------------------------------------
+
+      - name: Check application health
+        run: |
+          curl \
+            --fail \
+            --retry 10 \
+            --retry-delay 5 \
+            "http://${VM_IP}/health"
+
+      # --------------------------------------------------------
+      # Readiness Check
+      # --------------------------------------------------------
+
+      - name: Check application readiness
+        run: |
+          curl \
+            --fail \
+            --retry 10 \
+            --retry-delay 5 \
+            "http://${VM_IP}/health/ready"
+
+      # --------------------------------------------------------
+      # Deployment Completed
+      # --------------------------------------------------------
+
+      - name: Deployment successful
+        run: |
+          echo "=========================================="
+          echo "10Alytics application deployed successfully"
+          echo "=========================================="
