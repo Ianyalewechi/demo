@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>10Alytics Learning Platform</title>
+
+    <meta
+        name="description"
+        content="10Alytics Learning Platform for digital technology, data and future ready learning."
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <header class="site-header">
+        <nav class="navbar">
+
+            <a href="/" class="brand">
+                <span class="brand-mark">10</span>
+                <span class="brand-text">
+                    <strong>10Alytics</strong>
+                    <small>Learning Platform</small>
+                </span>
+            </a>
+
+            <div class="nav-links">
+                <a href="#programmes">Programmes</a>
+                <a href="#experience">Experience</a>
+                <a href="#campus">Learning Environment</a>
+                <a href="#about">About</a>
+            </div>
+
+            <a href="#programmes" class="nav-button">
+                Explore Learning
+            </a>
+
+            <button
+                class="mobile-menu-button"
+                onclick="toggleMenu()"
+                aria-label="Open navigation menu"
+            >
+                ☰
+            </button>
+        </nav>
+
+        <div id="mobileMenu" class="mobile-menu">
+            <a href="#programmes" onclick="toggleMenu()">Programmes</a>
+            <a href="#experience" onclick="toggleMenu()">Experience</a>
+            <a href="#campus" onclick="toggleMenu()">Learning Environment</a>
+            <a href="#about" onclick="toggleMenu()">About</a>
+        </div>
+    </header>
+
+
+    <!-- Hero -->
+    <main>
+
+        <section class="hero">
+
+            <div class="hero-overlay"></div>
+
+            <div class="hero-content">
+
+                <div class="hero-badge">
+                    Modern learning for a changing world
+                </div>
+
+                <h1>
+                    Learning today.<br>
+                    <span>Leading tomorrow.</span>
+                </h1>
+
+                <p>
+                    Building practical digital skills, developing confident
+                    learners and preparing the next generation for a
+                    technology driven future.
+                </p>
+
+                <div class="hero-actions">
+                    <a href="#programmes" class="primary-button">
+                        Explore programmes
+                    </a>
+
+                    <a href="#experience" class="secondary-button">
+                        Discover the experience
+                    </a>
+                </div>
+
+            </div>
+
+            <!-- Progress Card -->
+            <div class="hero-dashboard">
+
+                <div class="dashboard-header">
+                    <div>
+                        <span class="dashboard-label">
+                            STUDENT DASHBOARD
+                        </span>
+
+                        <h3>Learning progress</h3>
+                    </div>
+
+                    <span class="status-dot"></span>
+                </div>
+
+                <div class="progress-main">
+                    <div class="progress-circle">
+                        <span>78%</span>
+                    </div>
+
+                    <div class="progress-info">
+                        <strong>Great progress!</strong>
+                        <p>
+                            You are making excellent progress
+                            across your learning programmes.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="progress-list">
+
+                    <div class="progress-item">
+                        <div>
+                            <span>Digital Technology</span>
+                            <strong>84%</strong>
+                        </div>
+
+                        <div class="progress-bar">
+                            <span style="width: 84%"></span>
+                        </div>
+                    </div>
+
+                    <div class="progress-item">
+                        <div>
+                            <span>Data & Analytics</span>
+                            <strong>72%</strong>
+                        </div>
+
+                        <div class="progress-bar">
+                            <span style="width: 72%"></span>
+                        </div>
+                    </div>
+
+                    <div class="progress-item">
+                        <div>
+                            <span>Future Ready Skills</span>
+                            <strong>79%</strong>
+                        </div>
+
+                        <div class="progress-bar">
+                            <span style="width: 79%"></span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Statistics -->
+        <section class="stats-section">
+
+            <div class="stats-container">
+
+                <div class="stat">
+                    <strong>25K+</strong>
+                    <span>Learners</span>
+                </div>
+
+                <div class="stat">
+                    <strong>850+</strong>
+                    <span>Learning Resources</span>
+                </div>
+
+                <div class="stat">
+                    <strong>120+</strong>
+                    <span>Educators</span>
+                </div>
+
+                <div class="stat">
+                    <strong>98%</strong>
+                    <span>Engagement</span>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Programmes -->
+        <section class="section" id="programmes">
+
+            <div class="section-heading">
+
+                <div>
+                    <span class="eyebrow">LEARNING PATHWAYS</span>
+
+                    <h2>
+                        Skills for the world ahead.
+                    </h2>
+                </div>
+
+                <p>
+                    Explore practical learning experiences designed
+                    to help learners develop relevant skills and
+                    confidence for the future.
+                </p>
+
+            </div>
+
+
+            <div class="programme-grid">
+
+                <article class="programme-card">
+
+                    <div class="programme-image technology-image"></div>
+
+                    <div class="programme-content">
+
+                        <span class="programme-number">01</span>
+
+                        <h3>Digital Technology</h3>
+
+                        <p>
+                            Develop practical technology skills through
+                            hands on learning, digital tools and
+                            real world projects.
+                        </p>
+
+                        <a href="#experience">
+                            Explore pathway →
+                        </a>
+
+                    </div>
+
+                </article>
+
+
+                <article class="programme-card">
+
+                    <div class="programme-image future-image"></div>
+
+                    <div class="programme-content">
+
+                        <span class="programme-number">02</span>
+
+                        <h3>Future Ready Learning</h3>
+
+                        <p>
+                            Build collaboration, creativity, communication
+                            and problem solving skills for tomorrow's
+                            opportunities.
+                        </p>
+
+                        <a href="#experience">
+                            Explore pathway →
+                        </a>
+
+                    </div>
+
+                </article>
+
+
+                <article class="programme-card">
+
+                    <div class="programme-image analytics-image"></div>
+
+                    <div class="programme-content">
+
+                        <span class="programme-number">03</span>
+
+                        <h3>Data & Analytics</h3>
+
+                        <p>
+                            Learn how data, analytics and technology can
+                            be used to understand problems and create
+                            better solutions.
+                        </p>
+
+                        <a href="#experience">
+                            Explore pathway →
+                        </a>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+        </section>
+
+
+        <!-- Experience -->
+        <section class="experience-section" id="experience">
+
+            <div class="experience-image"></div>
+
+            <div class="experience-content">
+
+                <span class="eyebrow">THE LEARNING EXPERIENCE</span>
+
+                <h2>
+                    More than a classroom.
+                    A launchpad for the future.
+                </h2>
+
+                <p>
+                    Modern education should give learners more than
+                    information. It should create opportunities to
+                    experiment, collaborate, solve problems and apply
+                    knowledge in meaningful ways.
+                </p>
+
+                <div class="feature-list">
+
+                    <div class="feature">
+                        <div class="feature-icon">01</div>
+
+                        <div>
+                            <strong>Practical learning</strong>
+                            <p>
+                                Apply knowledge through projects,
+                                experiments and real world challenges.
+                            </p>
+                        </div>
+                    </div>
+
+
+                    <div class="feature">
+                        <div class="feature-icon">02</div>
+
+                        <div>
+                            <strong>Technology enabled</strong>
+                            <p>
+                                Use modern digital tools to make learning
+                                interactive and accessible.
+                            </p>
+                        </div>
+                    </div>
+
+
+                    <div class="feature">
+                        <div class="feature-icon">03</div>
+
+                        <div>
+                            <strong>Future focused</strong>
+                            <p>
+                                Develop the skills required for an
+                                increasingly digital economy.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Campus -->
+        <section class="section campus-section" id="campus">
+
+            <div class="section-heading">
+
+                <div>
+                    <span class="eyebrow">
+                        LEARNING ENVIRONMENT
+                    </span>
+
+                    <h2>
+                        Designed for curiosity.
+                    </h2>
+                </div>
+
+                <p>
+                    From collaborative classrooms to technology
+                    enabled learning spaces, the environment matters.
+                </p>
+
+            </div>
+
+
+            <div class="campus-card">
+
+                <div class="campus-image"></div>
+
+                <div class="campus-content">
+
+                    <span class="eyebrow">
+                        CONNECT • CREATE • LEARN
+                    </span>
+
+                    <h3>
+                        Give learners the space to explore.
+                    </h3>
+
+                    <p>
+                        A strong learning environment encourages
+                        students to ask questions, work together,
+                        experiment with ideas and build confidence.
+                    </p>
+
+                    <a href="#about" class="text-link">
+                        Learn more about our approach →
+                    </a>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- CTA -->
+        <section class="cta-section" id="about">
+
+            <div class="cta-content">
+
+                <span class="eyebrow">
+                    READY TO START?
+                </span>
+
+                <h2>
+                    Build the skills for what comes next.
+                </h2>
+
+                <p>
+                    Discover a learning experience built around
+                    technology, practical skills and future
+                    opportunities.
+                </p>
+
+                <a href="#programmes" class="primary-button">
+                    Explore programmes
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- Footer -->
+    <footer class="site-footer">
+
+        <div class="footer-main">
+
+            <div class="footer-brand">
+
+                <a href="/" class="brand footer-brand-link">
+
+                    <span class="brand-mark">10</span>
+
+                    <span class="brand-text">
+                        <strong>10Alytics</strong>
+                        <small>Learning Platform</small>
+                    </span>
+
+                </a>
+
+                <p>
+                    Practical learning for a technology driven future.
+                </p>
+
+            </div>
+
+
+            <div class="footer-links">
+
+                <div>
+                    <strong>Platform</strong>
+                    <a href="#programmes">Programmes</a>
+                    <a href="#experience">Experience</a>
+                    <a href="#campus">Learning Environment</a>
+                </div>
+
+                <div>
+                    <strong>Application</strong>
+                    <a href="/health">Health</a>
+                    <a href="/health/ready">Readiness</a>
+                    <a href="/api/info">API Information</a>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="footer-bottom">
+
+            <span>
+                © 2026 10Alytics Learning Platform
+            </span>
+
+            <span>
+                Version {{ version }} · {{ environment }}
+            </span>
+
+        </div>
+
+    </footer>
+
+
+    <script
+        src="{{ url_for('static', filename='js/app.js') }}"
+    ></script>
+
+</body>
+</html>
