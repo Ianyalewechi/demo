@@ -1,3 +1,4 @@
+
 name: 10Alytics CI/CD
 
 on:
@@ -75,7 +76,6 @@ jobs:
     name: Provision Azure Infrastructure
     runs-on: ubuntu-latest
 
-    # Infrastructure is only provisioned after tests pass
     needs: test
 
     steps:
@@ -143,7 +143,10 @@ jobs:
             -var="location=${{ env.AZURE_LOCATION }}" \
             -var="acr_name=${{ env.ACR_NAME }}" \
             -var="vm_name=${{ env.VM_NAME }}" \
-            -var="key_vault_name=${{ env.KEY_VAULT_NAME }}"
+            -var="key_vault_name=${{ env.KEY_VAULT_NAME }}" \
+            -var="github_repository=${{ github.repository }}" \
+            -var="github_branch=${{ github.ref_name }}" \
+            -var="ssh_public_key=${{ secrets.VM_SSH_PUBLIC_KEY }}"
 
       # --------------------------------------------------------
       # Terraform Apply
@@ -165,7 +168,6 @@ jobs:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
 
-    # Docker build only starts after infrastructure succeeds
     needs: infrastructure
 
     steps:
@@ -221,7 +223,6 @@ jobs:
     name: Deploy Application to Azure VM
     runs-on: ubuntu-latest
 
-    # Deployment only starts after Docker image is pushed
     needs: build
 
     steps:
@@ -343,7 +344,6 @@ jobs:
     name: Application Health Check
     runs-on: ubuntu-latest
 
-    # Health check only starts after deployment succeeds
     needs: deploy
 
     steps:
