@@ -15,6 +15,13 @@ resource "azurerm_role_assignment" "github_acr_push" {
   scope                = azurerm_container_registry.main.id
   role_definition_name = "AcrPush"
   principal_id         = data.azurerm_user_assigned_identity.github_actions.principal_id
+
+  lifecycle {
+    ignore_changes = [
+      role_definition_id,
+      principal_type
+    ]
+  }
 }
 
 resource "azurerm_role_assignment" "vm_acr_pull" {
